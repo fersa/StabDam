@@ -769,7 +769,7 @@ def main():
             }
         
         st.markdown("---")
-        if st.button("🔄 Guardar", type="primary", use_container_width=True):
+        if st.button("🔄 Guardar", type="primary", width='stretch'):
             try:
                 st.session_state.config["GEOMETRIA"]["altura_H"] = altura_H
                 # st.session_state.config["GEOMETRIA"]["ancho_coronacion"] = ancho_coronacion
@@ -873,19 +873,23 @@ def main():
                                         key=f"{esc_id}_usar_sismo")
                 kh = st.number_input("kh", value=esc_data.get("kh", 0.0), 
                                     min_value=0.0, max_value=1.0, format="%.3f", 
-                                    key=f"{esc_id}_kh", disabled=not usar_sismo)
+                                    # key=f"{esc_id}_kh", disabled=not usar_sismo)
+                                    key=f"{esc_id}_kh")
                 kv = st.number_input("kv", value=esc_data.get("kv", 0.0), 
                                     min_value=0.0, max_value=1.0, format="%.3f", 
-                                    key=f"{esc_id}_kv", disabled=not usar_sismo)
+                                    # key=f"{esc_id}_kv", disabled=not usar_sismo)
+                                    key=f"{esc_id}_kv")
                 usar_wh = st.checkbox("Usar Westergaard", value=esc_data.get("usar_westergaard", False), 
-                                     key=f"{esc_id}_usar_wh", disabled=not usar_sismo)
+                                    #  key=f"{esc_id}_usar_wh", disabled=not usar_sismo)
+                                     key=f"{esc_id}_usar_wh")
                 
                 st.subheader("❄️ Hielo")
                 usar_hielo = st.checkbox("Usar hielo", value=esc_data.get("usar_hielo", False), 
                                         key=f"{esc_id}_usar_hielo")
                 p_hielo = st.number_input("Presión hielo (kPa)", value=esc_data.get("p_hielo_kPa", 0.0), 
                                          min_value=0.0, format="%.2f", 
-                                         key=f"{esc_id}_p_hielo", disabled=not usar_hielo)
+                                        #  key=f"{esc_id}_p_hielo", disabled=not usar_hielo)
+                                         key=f"{esc_id}_p_hielo")
             
             with col3:
                 st.subheader("📐 Factores Mínimos")
@@ -916,7 +920,7 @@ def main():
             col_btn1, col_btn2, col_btn3 = st.columns(3)
             
             with col_btn1:
-                if st.button(f"💾 Guardar {esc_id}", type="primary", use_container_width=True):
+                if st.button(f"💾 Guardar {esc_id}", type="primary", width='stretch'):
                     st.session_state.config["ESCENARIOS"][esc_id] = {
                         "nombre": nombre,
                         "H_AU": H_AU,
@@ -940,7 +944,7 @@ def main():
                     st.success(f"✅ {esc_id} guardado")
             
             with col_btn2:
-                if st.button(f"🔢 Calcular {esc_id}", use_container_width=True):
+                if st.button(f"🔢 Calcular {esc_id}", width='stretch'):
                     if st.session_state.geometry is None:
                         st.error("⚠️ Actualice la geometría primero")
                     else:
@@ -963,7 +967,7 @@ def main():
                             st.error(f"Error: {e}")
             
             with col_btn3:
-                if st.button(f"🗑️ Limpiar {esc_id}", use_container_width=True):
+                if st.button(f"🗑️ Limpiar {esc_id}", width='stretch'):
                     if esc_id in st.session_state.results:
                         del st.session_state.results[esc_id]
                         st.success(f"{esc_id} limpiado")
@@ -971,183 +975,184 @@ def main():
             
             # Mostrar resultados
             if esc_id in st.session_state.results:
-                st.markdown("---")
-                st.subheader("📊 Resultados")
-                
-                result = st.session_state.results[esc_id]
-                
-                col_r1, col_r2, col_r3, col_r4 = st.columns(4)
-                
-                with col_r1:
-                    fs_d = result['FS_desliz']
-                    fs_d_str = f"{fs_d:.3f}" if np.isfinite(fs_d) else "∞"
-                    st.metric("FS Deslizamiento", fs_d_str)
-                    fs_desliz_ok = fs_d >= FS_desliz_min
-                    if fs_desliz_ok:
-                        st.success("✅ Cumple")
-                    else:
-                        st.error("❌ No cumple")
-                
-                with col_r2:
-                    fs_v = result['FS_vuelco']
-                    fs_v_str = f"{fs_v:.3f}" if np.isfinite(fs_v) else "∞"
-                    st.metric("FS Vuelco", fs_v_str)
-                    fs_vuelco_ok = fs_v >= FS_vuelco_min
-                    if fs_vuelco_ok:
-                        st.success("✅ Cumple")
-                    else:
-                        st.error("❌ No cumple")
-                
-                with col_r3:
-                    e_val = result['base']['e_m']
-                    e_str = f"{e_val:.3f}" if np.isfinite(e_val) else "N/A"
-                    st.metric("Excentricidad (m)", e_str)
-                    if result['base']['no_traccion']:
-                        st.success("✅ Sin tracción")
-                    else:
-                        st.warning("⚠️ Con tracción")
-                
-                with col_r4:
-                    st.metric("Long. comprimida (m)", f"{result['B_eff']:.3f}")
-                    st.metric("Long. grieta (m)", f"{result['L_grieta']:.3f}")
-                
-                # Tabla de detalles
-                st.markdown("#### Detalles de las Cargas")
-                col_t1, col_t2 = st.columns(2)
-                
-                with col_t1:
-                    st.write(f"**Normal N (kN/m)**: {result['base']['N_kN']:.2f}")
-                    st.write(f"**Tangencial T (kN/m)**: {result['base']['T_kN']:.2f}")
-                    st.write(f"**Capacidad (kN/m)**: {result['Rcap']:.2f}")
-                    st.write(f"**σ AU (kPa)**: {result['base']['sigma_AU_kPa']:.2f}")
-                    st.write(f"**σ AD (kPa)**: {result['base']['sigma_AD_kPa']:.2f}")
-                
-                with col_t2:
-                    st.write(f"**σ min (kPa)**: {result['base']['sigma_min_kPa']:.2f}")
-                    st.write(f"**σ max (kPa)**: {result['base']['sigma_max_kPa']:.2f}")
-                    st.write(f"**Momento (kN·m/m)**: {result['M_toeAD']:.2f}")
-                    st.write(f"**Resultante X (kN/m)**: {result['R'][0]:.2f}")
-                    st.write(f"**Resultante Y (kN/m)**: {result['R'][1]:.2f}")
-                
-                # Gráficos
-                st.markdown("#### Visualizaciones")
-                col_g1, col_g2 = st.columns(2)
-                
-                with col_g1:
-                    st.markdown("**Perfil con Fuerzas**")
-                    try:
-                        fig_perfil = plot_profile_with_forces(
-                            st.session_state.geometry,
-                            result['actions'],
-                            result['R'],
-                            result['base']['e_m'],
-                            f"{esc_id} - {nombre}"
-                        )
-                        st.pyplot(fig_perfil)
-                        plt.close(fig_perfil)
-                    except Exception as e:
-                        st.error(f"Error en gráfico: {e}")
-                    st.markdown("**Presiones en la Base**")
-                    try:
-                        # fig_presiones = plot_base_pressures(
-                        #     st.session_state.geometry,
-                        #     result['base']['N_kN'],
-                        #     result['base']['e_m'],
-                        #     f"{esc_id} - Presiones"
-                        # )
-                        fig_presiones = plot_base_pressures(
-                            st.session_state.geometry,
-                            result['base']['N_kN'],
-                            result['base']['e_m'],
-                            f"{esc_id} - Presiones",
-                            ruta_png=None,
-                            gamma_w=st.session_state.config["MATERIALES"]["gamma_agua"],  # ✅ corregido también
-                            H_AU=esc_data.get("H_AU_subpresion", 0.0),
-                            H_AD=esc_data.get("H_AD_subpresion", 0.0),
-                            eficiencia=esc_data.get("eficiencia_dren", 0.0),
-                            L_grieta=result.get("L_grieta", 0.0)
-                        )
+                with st.container():
+                    st.markdown("---")
+                    st.subheader("📊 Resultados")
+                    
+                    result = st.session_state.results[esc_id]
+                    
+                    col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+                    
+                    with col_r1:
+                        fs_d = result['FS_desliz']
+                        fs_d_str = f"{fs_d:.3f}" if np.isfinite(fs_d) else "∞"
+                        st.metric("FS Deslizamiento", fs_d_str)
+                        fs_desliz_ok = fs_d >= FS_desliz_min
+                        if fs_desliz_ok:
+                            st.success("✅ Cumple")
+                        else:
+                            st.error("❌ No cumple")
+                    
+                    with col_r2:
+                        fs_v = result['FS_vuelco']
+                        fs_v_str = f"{fs_v:.3f}" if np.isfinite(fs_v) else "∞"
+                        st.metric("FS Vuelco", fs_v_str)
+                        fs_vuelco_ok = fs_v >= FS_vuelco_min
+                        if fs_vuelco_ok:
+                            st.success("✅ Cumple")
+                        else:
+                            st.error("❌ No cumple")
+                    
+                    with col_r3:
+                        e_val = result['base']['e_m']
+                        e_str = f"{e_val:.3f}" if np.isfinite(e_val) else "N/A"
+                        st.metric("Excentricidad (m)", e_str)
+                        if result['base']['no_traccion']:
+                            st.success("✅ Sin tracción")
+                        else:
+                            st.warning("⚠️ Con tracción")
+                    
+                    with col_r4:
+                        st.metric("Long. comprimida (m)", f"{result['B_eff']:.3f}")
+                        st.metric("Long. grieta (m)", f"{result['L_grieta']:.3f}")
+                    
+                    # Tabla de detalles
+                    st.markdown("#### Detalles de las Cargas")
+                    col_t1, col_t2 = st.columns(2)
+                    
+                    with col_t1:
+                        st.write(f"**Normal N (kN/m)**: {result['base']['N_kN']:.2f}")
+                        st.write(f"**Tangencial T (kN/m)**: {result['base']['T_kN']:.2f}")
+                        st.write(f"**Capacidad (kN/m)**: {result['Rcap']:.2f}")
+                        st.write(f"**σ AU (kPa)**: {result['base']['sigma_AU_kPa']:.2f}")
+                        st.write(f"**σ AD (kPa)**: {result['base']['sigma_AD_kPa']:.2f}")
+                    
+                    with col_t2:
+                        st.write(f"**σ min (kPa)**: {result['base']['sigma_min_kPa']:.2f}")
+                        st.write(f"**σ max (kPa)**: {result['base']['sigma_max_kPa']:.2f}")
+                        st.write(f"**Momento (kN·m/m)**: {result['M_toeAD']:.2f}")
+                        st.write(f"**Resultante X (kN/m)**: {result['R'][0]:.2f}")
+                        st.write(f"**Resultante Y (kN/m)**: {result['R'][1]:.2f}")
+                    
+                    # Gráficos
+                    st.markdown("#### Visualizaciones")
+                    col_g1, col_g2 = st.columns(2)
+                    
+                    with col_g1:
+                        st.markdown("**Perfil con Fuerzas**")
+                        try:
+                            fig_perfil = plot_profile_with_forces(
+                                st.session_state.geometry,
+                                result['actions'],
+                                result['R'],
+                                result['base']['e_m'],
+                                f"{esc_id} - {nombre}"
+                            )
+                            st.pyplot(fig_perfil)
+                            plt.close(fig_perfil)
+                        except Exception as e:
+                            st.error(f"Error en gráfico: {e}")
+                        st.markdown("**Presiones en la Base**")
+                        try:
+                            # fig_presiones = plot_base_pressures(
+                            #     st.session_state.geometry,
+                            #     result['base']['N_kN'],
+                            #     result['base']['e_m'],
+                            #     f"{esc_id} - Presiones"
+                            # )
+                            fig_presiones = plot_base_pressures(
+                                st.session_state.geometry,
+                                result['base']['N_kN'],
+                                result['base']['e_m'],
+                                f"{esc_id} - Presiones",
+                                ruta_png=None,
+                                gamma_w=st.session_state.config["MATERIALES"]["gamma_agua"],  # ✅ corregido también
+                                H_AU=esc_data.get("H_AU_subpresion", 0.0),
+                                H_AD=esc_data.get("H_AD_subpresion", 0.0),
+                                eficiencia=esc_data.get("eficiencia_dren", 0.0),
+                                L_grieta=result.get("L_grieta", 0.0)
+                            )
 
 
-                        if fig_presiones:
-                            st.pyplot(fig_presiones)
-                            plt.close(fig_presiones)
-                    except Exception as e:
-                        st.error(f"Error en gráfico: {e}")
-                with col_g2:
-                     # --- Análisis paramétrico de deslizamiento ---
-                    st.markdown("**Análisis Paramétrico – FS Deslizamiento**")
-                    param_conf = st.session_state.parametric
-                    try:
-                        phi_vals, coh_vals, (FSd, FSv) = parametric_analysis(
-                            st.session_state.geometry,
-                            st.session_state.config["MATERIALES"],
-                            st.session_state.config["ESCENARIOS"][esc_id],
-                            usar_c=(usar_cohesion == "with_c"),
-                            coh_range=(param_conf["coh_min"], param_conf["coh_max"], param_conf["n_points"]),
-                            phi_range=(param_conf["phi_min"], param_conf["phi_max"], param_conf["n_points"])
-                        )
+                            if fig_presiones:
+                                st.pyplot(fig_presiones)
+                                plt.close(fig_presiones)
+                        except Exception as e:
+                            st.error(f"Error en gráfico: {e}")
+                    with col_g2:
+                        # --- Análisis paramétrico de deslizamiento ---
+                        st.markdown("**Análisis Paramétrico – FS Deslizamiento**")
+                        param_conf = st.session_state.parametric
+                        try:
+                            phi_vals, coh_vals, (FSd, FSv) = parametric_analysis(
+                                st.session_state.geometry,
+                                st.session_state.config["MATERIALES"],
+                                st.session_state.config["ESCENARIOS"][esc_id],
+                                usar_c=(usar_cohesion == "with_c"),
+                                coh_range=(param_conf["coh_min"], param_conf["coh_max"], param_conf["n_points"]),
+                                phi_range=(param_conf["phi_min"], param_conf["phi_max"], param_conf["n_points"])
+                            )
 
-                        fig1, ax1 = plt.subplots(figsize=(6, 5))
-                        im1 = ax1.imshow(FSd, extent=[coh_vals[0], coh_vals[-1], phi_vals[0], phi_vals[-1]],
-                                        origin="lower", aspect="auto", cmap="viridis")
-                        plt.colorbar(im1, ax=ax1, label="FS deslizamiento")
+                            fig1, ax1 = plt.subplots(figsize=(6, 5))
+                            im1 = ax1.imshow(FSd, extent=[coh_vals[0], coh_vals[-1], phi_vals[0], phi_vals[-1]],
+                                            origin="lower", aspect="auto", cmap="viridis")
+                            plt.colorbar(im1, ax=ax1, label="FS deslizamiento")
 
-                        # --- Curvas de nivel para FS = 1, 2, 3 ---
-                        coh_grid, phi_grid = np.meshgrid(coh_vals, phi_vals)
-                        CS1 = ax1.contour(coh_grid, phi_grid, FSd, levels=[1, 2, 3], colors='white', linewidths=1.2)
-                        ax1.clabel(CS1, inline=True, fontsize=8, fmt='%1.0f')
+                            # --- Curvas de nivel para FS = 1, 2, 3 ---
+                            coh_grid, phi_grid = np.meshgrid(coh_vals, phi_vals)
+                            CS1 = ax1.contour(coh_grid, phi_grid, FSd, levels=[1, 2, 3], colors='white', linewidths=1.2)
+                            ax1.clabel(CS1, inline=True, fontsize=8, fmt='%1.0f')
 
-                        # --- Curva destacada para FS requerido ---
-                        fs_req = st.session_state.config["FACTORES_MINIMOS_FS"][esc_id]["desliz"]
-                        CS_req = ax1.contour(coh_grid, phi_grid, FSd, levels=[fs_req], colors='red', linewidths=2.0)
-                        ax1.clabel(CS_req, inline=True, fontsize=9, fmt=f"FS={fs_req:.2f}", colors='red')
+                            # --- Curva destacada para FS requerido ---
+                            fs_req = st.session_state.config["FACTORES_MINIMOS_FS"][esc_id]["desliz"]
+                            CS_req = ax1.contour(coh_grid, phi_grid, FSd, levels=[fs_req], colors='red', linewidths=2.0)
+                            ax1.clabel(CS_req, inline=True, fontsize=9, fmt=f"FS={fs_req:.2f}", colors='red')
 
-                        # --- Asterisco para el valor actual ---
-                        phi_actual = st.session_state.config["MATERIALES"]["friccion_phi_deg"]
-                        coh_actual = st.session_state.config["MATERIALES"]["cohesion_kPa"] / 98.0665
-                        ax1.plot(coh_actual, phi_actual, marker='*', color='black', markersize=12, label='Valor actual')
-                        ax1.legend(loc='lower right', fontsize=8)
+                            # --- Asterisco para el valor actual ---
+                            phi_actual = st.session_state.config["MATERIALES"]["friccion_phi_deg"]
+                            coh_actual = st.session_state.config["MATERIALES"]["cohesion_kPa"] / 98.0665
+                            ax1.plot(coh_actual, phi_actual, marker='*', color='black', markersize=12, label='Valor actual')
+                            ax1.legend(loc='lower right', fontsize=8)
 
-                        ax1.set_xlabel("Cohesión (kg/cm²)")
-                        ax1.set_ylabel("Ángulo de fricción (°)")
-                        ax1.set_title(f"{esc_id} - FS deslizamiento")
-                        st.pyplot(fig1, use_container_width=True)
-                        plt.close(fig1)
-                    except Exception as e:
-                        st.error(f"Error en análisis paramétrico (desliz): {e}")
-                        # --- Análisis paramétrico de vuelco ---
-                    st.markdown("**Análisis Paramétrico – FS Vuelco**")
-                    try:
-                        # (usa los mismos phi_vals, coh_vals y FSv del cálculo anterior)
-                        fig2, ax2 = plt.subplots(figsize=(6, 5))
-                        im2 = ax2.imshow(FSv, extent=[coh_vals[0], coh_vals[-1], phi_vals[0], phi_vals[-1]],
-                                        origin="lower", aspect="auto", cmap="plasma")
-                        plt.colorbar(im2, ax=ax2, label="FS vuelco")
+                            ax1.set_xlabel("Cohesión (kg/cm²)")
+                            ax1.set_ylabel("Ángulo de fricción (°)")
+                            ax1.set_title(f"{esc_id} - FS deslizamiento")
+                            st.pyplot(fig1, width='stretch')
+                            plt.close(fig1)
+                        except Exception as e:
+                            st.error(f"Error en análisis paramétrico (desliz): {e}")
+                            # --- Análisis paramétrico de vuelco ---
+                        st.markdown("**Análisis Paramétrico – FS Vuelco**")
+                        try:
+                            # (usa los mismos phi_vals, coh_vals y FSv del cálculo anterior)
+                            fig2, ax2 = plt.subplots(figsize=(6, 5))
+                            im2 = ax2.imshow(FSv, extent=[coh_vals[0], coh_vals[-1], phi_vals[0], phi_vals[-1]],
+                                            origin="lower", aspect="auto", cmap="plasma")
+                            plt.colorbar(im2, ax=ax2, label="FS vuelco")
 
-                        # --- Curvas de nivel para FS = 1, 2, 3 ---
-                        coh_grid, phi_grid = np.meshgrid(coh_vals, phi_vals)
-                        CS2 = ax2.contour(coh_grid, phi_grid, FSv, levels=[1, 2, 3], colors='white', linewidths=1.2)
-                        ax2.clabel(CS2, inline=True, fontsize=8, fmt='%1.0f')
+                            # --- Curvas de nivel para FS = 1, 2, 3 ---
+                            coh_grid, phi_grid = np.meshgrid(coh_vals, phi_vals)
+                            CS2 = ax2.contour(coh_grid, phi_grid, FSv, levels=[1, 2, 3], colors='white', linewidths=1.2)
+                            ax2.clabel(CS2, inline=True, fontsize=8, fmt='%1.0f')
 
-                        # --- Curva destacada para FS requerido ---
-                        fs_req_v = st.session_state.config["FACTORES_MINIMOS_FS"][esc_id]["vuelco"]
-                        CS_req_v = ax2.contour(coh_grid, phi_grid, FSv, levels=[fs_req_v], colors='red', linewidths=2.0)
-                        ax2.clabel(CS_req_v, inline=True, fontsize=9, fmt=f"FS={fs_req_v:.2f}", colors='red')
+                            # --- Curva destacada para FS requerido ---
+                            fs_req_v = st.session_state.config["FACTORES_MINIMOS_FS"][esc_id]["vuelco"]
+                            CS_req_v = ax2.contour(coh_grid, phi_grid, FSv, levels=[fs_req_v], colors='red', linewidths=2.0)
+                            ax2.clabel(CS_req_v, inline=True, fontsize=9, fmt=f"FS={fs_req_v:.2f}", colors='red')
 
-                        # --- Asterisco para el valor actual ---
-                        phi_actual = st.session_state.config["MATERIALES"]["friccion_phi_deg"]
-                        coh_actual = st.session_state.config["MATERIALES"]["cohesion_kPa"] / 98.0665
-                        ax2.plot(coh_actual, phi_actual, marker='*', color='black', markersize=12, label='Valor actual')
-                        ax2.legend(loc='lower right', fontsize=8)
+                            # --- Asterisco para el valor actual ---
+                            phi_actual = st.session_state.config["MATERIALES"]["friccion_phi_deg"]
+                            coh_actual = st.session_state.config["MATERIALES"]["cohesion_kPa"] / 98.0665
+                            ax2.plot(coh_actual, phi_actual, marker='*', color='black', markersize=12, label='Valor actual')
+                            ax2.legend(loc='lower right', fontsize=8)
 
-                        ax2.set_xlabel("Cohesión (kg/cm²)")
-                        ax2.set_ylabel("Ángulo de fricción (°)")
-                        ax2.set_title(f"{esc_id} - FS vuelco")
-                        st.pyplot(fig2, use_container_width=True)
-                        plt.close(fig2)
-                    except Exception as e:
-                        st.error(f"Error en análisis paramétrico (vuelco): {e}")
+                            ax2.set_xlabel("Cohesión (kg/cm²)")
+                            ax2.set_ylabel("Ángulo de fricción (°)")
+                            ax2.set_title(f"{esc_id} - FS vuelco")
+                            st.pyplot(fig2, width='stretch')
+                            plt.close(fig2)
+                        except Exception as e:
+                            st.error(f"Error en análisis paramétrico (vuelco): {e}")
     
     # Comparación de resultados
     st.markdown("---")
@@ -1174,7 +1179,7 @@ def main():
             })
         
         df_comp = pd.DataFrame(comp_data)
-        st.dataframe(df_comp, use_container_width=True, hide_index=True)
+        st.dataframe(df_comp, width='stretch', hide_index=True)
         
         # Exportar Excel
         col_exp1, col_exp2 = st.columns([1, 4])
@@ -1219,7 +1224,7 @@ def main():
                 data=excel_data,
                 file_name="resultados_presa.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
+                width='stretch'
             )
     else:
         st.info("ℹ️ No hay resultados para comparar. Configure y calcule al menos un escenario.")
