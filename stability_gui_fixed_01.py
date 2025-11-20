@@ -88,11 +88,16 @@ def integrate_trapezoid(x, y):
 
 def compute_uplift_stress(x_union, L_total, H_w):
     gamma_w = 9810
-    syy_uplift = gamma_w * H_w * (1 - x_union/L_total)
+    # p(x) is the hydrostatic pressure distribution (positive scalar)
+    p = gamma_w * H_w * (1 - x_union / L_total)
+    # Represent uplift as a positive scalar pressure p in global axes
+    # (Sxx = Syy = +p). After rotation this yields sigma_n = +p and tau = 0,
+    # which increases sigma_n (towards tensile) and therefore reduces compression
+    # when added to FEM stresses (compression in input is negative).
     return pd.DataFrame({
         "x": x_union,
-        "Sxx": np.zeros_like(x_union),
-        "Syy": syy_uplift,
+        "Sxx": p,
+        "Syy": p,
         "Sxy": np.zeros_like(x_union)
     })
 
@@ -112,7 +117,8 @@ def compute_uplift_with_opening(x_union, H_w, closed_mask):
     if len(open_indices) == 0:
         # No opening, use standard calculation
         L_total = x_union[-1] - x_union[0]
-        syy_uplift = gamma_w * H_w * (1 - x_union/L_total)
+        p = gamma_w * H_w * (1 - x_union / L_total)
+        syy_uplift = p
     else:
         # There is opening
         # Value at x=0
@@ -136,14 +142,17 @@ def compute_uplift_with_opening(x_union, H_w, closed_mask):
                     x_closed = x_union[i] - x_last_open
                     L_closed = x_union[-1] - x_last_open
                     if L_closed > 0:
-                        syy_uplift[i] = gamma_w * H_w * (1 - x_closed/L_closed)
+                        syy_uplift[i] = gamma_w * H_w * (1 - x_closed / L_closed)
                     else:
                         syy_uplift[i] = uplift_at_x0
     
+    # Convert scalar uplift p (syy_uplift) into isotropic pressure stresses
+    # Use positive p so rotation yields positive sigma_n (reduces compression)
+    p_arr = syy_uplift
     return pd.DataFrame({
         "x": x_union,
-        "Sxx": np.zeros_like(x_union),
-        "Syy": syy_uplift,
+        "Sxx": p_arr,
+        "Syy": p_arr,
         "Sxy": np.zeros_like(x_union)
     })
 # Main analysis
@@ -220,11 +229,22 @@ if uploaded_file is not None:
                 tan_phi = math.tan(math.radians(phi_deg))
                 R = c*Lc + N*tan_phi
                 FS = R / max(abs(T), 1e-12)
+
+                # --- Compute required friction angle for FS_required with c=0 ---
+                if abs(N) > 1e-12 and abs(T) > 1e-12:
+                    tan_phi_req = (FS_required * abs(T)) / N
+                    if tan_phi_req < 1:
+                        phi_req = math.degrees(math.atan(tan_phi_req))
+                    else:
+                        phi_req = 89.9  # Unphysical, not achievable
+                else:
+                    phi_req = float('nan')
                 
                 # Display results
                 st.success("✅ Analysis completed successfully!")
                 
-                col1, col2, col3, col4 = st.columns(4)
+
+                col1, col2, col3, col4, col5 = st.columns(5)
                 with col1:
                     st.metric("Factor of Safety", f"{FS:.2f}", 
                              delta="OK" if FS >= FS_required else "FAIL",
@@ -235,13 +255,15 @@ if uploaded_file is not None:
                     st.metric("Tangential Force T", f"{T/1000:.0f} kN")
                 with col4:
                     st.metric("Resistance R", f"{R/1000:.0f} kN")
-                
-                col5, col6, col7 = st.columns(3)
                 with col5:
-                    st.metric("Closed Length Lc", f"{Lc:.2f}")
+                    st.metric("φ req. (c=0)", f"{phi_req:.2f}°" if not math.isnan(phi_req) else "N/A")
+
+                col6, col7, col8 = st.columns(3)
                 with col6:
-                    st.metric("Open Length", f"{L_total - Lc:.2f}")
+                    st.metric("Closed Length Lc", f"{Lc:.2f}")
                 with col7:
+                    st.metric("Open Length", f"{L_total - Lc:.2f}")
+                with col8:
                     st.metric("Open %", f"{100.0*((L_total - Lc)/L_total):.1f}%")
                 
                 # Create tabs for different visualizations

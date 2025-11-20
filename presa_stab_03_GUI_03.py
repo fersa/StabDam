@@ -147,7 +147,8 @@ def uplift_force(geom: Geometry, gamma_w, H_AU, H_AD, eficiencia, L_grieta=0.0):
         U_raw = 0.5 * (p_AU + p_AD) * B_len
         U = (1.0 - eficiencia) * U_raw
 
-        n = np.array([0.0, 1.0], dtype=float)
+        beta = math.radians(geom.beta_deg)
+        n = np.array([math.sin(beta), math.cos(beta)], dtype=float)
         F = U * n
 
         if (p_AU + p_AD) > 1e-12:
@@ -164,7 +165,8 @@ def uplift_force(geom: Geometry, gamma_w, H_AU, H_AD, eficiencia, L_grieta=0.0):
 
         U_raw = area_traccion + area_comp
         U = (1.0 - eficiencia) * U_raw
-        n = np.array([0.0, 1.0], dtype=float)
+        beta = math.radians(geom.beta_deg)
+        n = np.array([math.sin(beta), math.cos(beta)], dtype=float)
         F = U * n
 
         # Centroide compuesto
@@ -981,8 +983,21 @@ def main():
                     
                     result = st.session_state.results[esc_id]
                     
-                    col_r1, col_r2, col_r3, col_r4 = st.columns(4)
-                    
+
+                    # --- Calculate required friction angle for FS_desliz_min with c=0 ---
+                    N = result['base']['N_kN']
+                    T = result['base']['T_kN']
+                    if abs(N) > 1e-12 and abs(T) > 1e-12:
+                        tan_phi_req = (FS_desliz_min * abs(T)) / N
+                        if tan_phi_req < 1:
+                            phi_req = math.degrees(math.atan(tan_phi_req))
+                        else:
+                            phi_req = 89.9  # Unphysical, not achievable
+                    else:
+                        phi_req = float('nan')
+
+                    col_r1, col_r2, col_r3, col_r4, col_r5 = st.columns(5)
+
                     with col_r1:
                         fs_d = result['FS_desliz']
                         fs_d_str = f"{fs_d:.3f}" if np.isfinite(fs_d) else "∞"
@@ -992,7 +1007,7 @@ def main():
                             st.success("✅ Cumple")
                         else:
                             st.error("❌ No cumple")
-                    
+
                     with col_r2:
                         fs_v = result['FS_vuelco']
                         fs_v_str = f"{fs_v:.3f}" if np.isfinite(fs_v) else "∞"
@@ -1002,20 +1017,19 @@ def main():
                             st.success("✅ Cumple")
                         else:
                             st.error("❌ No cumple")
-                    
+
                     with col_r3:
-                        # e_val = result['base']['e_m']
-                        # e_str = f"{e_val:.3f}" if np.isfinite(e_val) else "N/A"
-                        # st.metric("Excentricidad (m)", e_str)
                         st.metric("Longitud de grieta Lc (m)", f"{result['L_grieta']:.3f}" if np.isfinite(result['L_grieta']) else "N/A")
                         if result['base']['no_traccion']:
                             st.success("✅ Sin tracción")
                         else:
                             st.warning("⚠️ Con tracción")
-                    
+
                     with col_r4:
                         st.metric("Long. comprimida (m)", f"{result['B_eff']:.3f}")
-                        # st.metric("Long. grieta (m)", f"{result['L_grieta']:.3f}")
+
+                    with col_r5:
+                        st.metric("φ req. (c=0)", f"{phi_req:.2f}°" if not math.isnan(phi_req) else "N/A")
                     
                     # Tabla de detalles
                     st.markdown("#### Detalles de las Cargas")
