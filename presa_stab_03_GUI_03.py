@@ -1021,12 +1021,14 @@ def main():
                     # --- Calculate required friction angle for FS_desliz_min with c=0 ---
                     N = result['base']['N_kN']
                     T = result['base']['T_kN']
-                    if abs(N) > 1e-12 and abs(T) > 1e-12:
+                    # Compute required friction angle (c = 0) from FS_desliz_min = (N*tanφ)/|T|
+                    # Accept any positive tan_phi_req; atan handles values >1 correctly.
+                    if (N is not None) and (abs(T) > 1e-12) and (N > 1e-12):
                         tan_phi_req = (FS_desliz_min * abs(T)) / N
-                        if tan_phi_req < 1:
+                        if tan_phi_req >= 0.0:
                             phi_req = math.degrees(math.atan(tan_phi_req))
                         else:
-                            phi_req = 89.9  # Unphysical, not achievable
+                            phi_req = float('nan')
                     else:
                         phi_req = float('nan')
 
