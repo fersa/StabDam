@@ -560,6 +560,40 @@ def compute_for_scenario(geom: Geometry, config_mat, escenario_data, usar_c=True
         # Tensiones en la base
         base = base_resultant_and_stress(geom, R, M_toeAD)
 
+        # -----------------------------------------------------------------
+        # Ajuste del término normal: calcular la contribución de la zona
+        # no-comprimida (tracción) del perfil lineal "full" y sumar esa
+        # contribución (negativa) a N para obtener la normal efectiva
+        # transmitida solo por la zona comprimida. Esto corrige el efecto
+        # de usar el perfil completo cuando parte de la base está abierta.
+        # -----------------------------------------------------------------
+        try:
+            B_len = geom.B_len
+            sigma_AU_full = float(base.get("sigma_AU_full_kPa", base.get("sigma_AU_kPa", 0.0)))
+            sigma_AD_full = float(base.get("sigma_AD_full_kPa", base.get("sigma_AD_kPa", 0.0)))
+            s_vals_local = np.linspace(0.0, B_len, 200)
+            sigma_full = sigma_AU_full + (sigma_AD_full - sigma_AU_full) * (s_vals_local / B_len)
+
+            # Integrar la parte no-comprimida (tensión) y sumarla a N (es negativa)
+            noncomp_integral = float(np.trapz(np.minimum(sigma_full, 0.0), s_vals_local))
+
+            # N original proyectado
+            N_proj = float(base["N_kN"])
+            # Apply correction: subtract the non-compressed integral (user request).
+            # Note: noncomp_integral is typically negative when tension exists, so
+            # N_corrected = N_proj - noncomp_integral increases N by the tensile
+            # magnitude; this matches the requested sign convention.
+            N_corrected = N_proj - noncomp_integral
+
+            # Store both for debugging/UI: original and corrected
+            base["N_kN_original"] = N_proj
+            base["N_kN"] = N_corrected
+            base["N_correction_from_noncomp_kN"] = noncomp_integral
+        except Exception:
+            # If anything fails, keep original N
+            base["N_kN_original"] = float(base.get("N_kN", 0.0))
+            base["N_correction_from_noncomp_kN"] = 0.0
+
         # Calcular nueva zona de contacto
         # usar_c = (cfg["REGLAS_COHESION"].get(scen_name, "with_c") == "with_c")
         FS_desliz, Rcap, B_eff, L_new = sliding_FS(
