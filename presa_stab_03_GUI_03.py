@@ -682,11 +682,11 @@ def init_session_state():
                 "inclinacion_cimiento_deg": -6.55,
             },
             "MATERIALES": {
-                "gamma_hormigon": 27.0,
-                "gamma_agua": 9.81,
-                "friccion_phi_deg": 35.0,
-                "cohesion_kPa": 196.13
-            },
+                    "gamma_hormigon": 27.0,
+                    "gamma_agua": 9.81,
+                    "friccion_phi_deg": 45.0,
+                    "cohesion_kPa": 490.3325  # 5 kg/cm² -> kPa (5 * 98.0665)
+                },
             "ESCENARIOS": {
                 # "N_1": {
                 #     "nombre": "Normal 1",

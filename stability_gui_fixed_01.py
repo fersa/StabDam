@@ -28,14 +28,14 @@ H_w = st.sidebar.number_input("Water height for upift Hw (m)", value=36.96, step
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Material Parameters")
-phi_deg = st.sidebar.number_input("Friction angle φ (°)", value=35.0, min_value=0.0, max_value=90.0, step=1.0)
-c_kgcm2 = st.sidebar.number_input("Cohesion c (kg/cm²)", value=2.0, min_value=0.0, step=0.1, format="%.3f")
+phi_deg = st.sidebar.number_input("Friction angle φ (°)", value=45.0, min_value=0.0, max_value=90.0, step=1.0)
+c_kgcm2 = st.sidebar.number_input("Cohesion c (kg/cm²)", value=0.5, min_value=0.0, step=0.1, format="%.3f")
 FS_required = st.sidebar.number_input("Required FS", value=1.4, min_value=0.1, step=0.1)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Parametric Study Ranges")
 phi_min = st.sidebar.number_input("φ min (°)", value=0, min_value=0, max_value=90)
-phi_max = st.sidebar.number_input("φ max (°)", value=50, min_value=0, max_value=90)
+phi_max = st.sidebar.number_input("φ max (°)", value=60, min_value=0, max_value=90)
 phi_step = st.sidebar.number_input("φ step (°)", value=5, min_value=1, max_value=10)
 
 c_min = st.sidebar.number_input("c min (kg/cm²)", value=0.0, min_value=0.0, step=0.1)
