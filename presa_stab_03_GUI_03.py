@@ -231,6 +231,7 @@ def base_resultant_and_stress(geom: Geometry, R, M_toeAD):
     
     if abs(N) < 1e-12:
         e = float('inf')
+        e_m1 = float('nan')
         sigma_AU = float('-inf')
         sigma_AD = float('-inf')
         sigma_min = float('-inf')
@@ -239,6 +240,7 @@ def base_resultant_and_stress(geom: Geometry, R, M_toeAD):
     else:
         s = M_toeAD / N
         e = s - B/2.0
+        e_m1 = B/2.0 - s
         sigma_med = N / B
     
         sigma_AU = sigma_med * (1.0 + 6.0*e/B)
@@ -250,7 +252,7 @@ def base_resultant_and_stress(geom: Geometry, R, M_toeAD):
         no_traccion = (sigma_AU >= 0.0) and (sigma_AD >= 0.0)
     
     return {
-        "N_kN": N, "T_kN": T, "e_m": e,
+        "N_kN": N, "T_kN": T, "e_m": e, "e_m1": e_m1,
         "sigma_min_kPa": sigma_min, "sigma_max_kPa": sigma_max,
         "sigma_AU_kPa": sigma_AU, "sigma_AD_kPa": sigma_AD,
         "no_traccion": no_traccion
@@ -306,7 +308,7 @@ def split_moments_by_sign(actions, xr, yr):
         else: Mminus += -M
     return Mplus, Mminus
 
-def plot_profile_with_forces(geom: Geometry, actions: dict, R_vec, e_m, title):
+def plot_profile_with_forces(geom: Geometry, actions: dict, R_vec, e_m1, title):
     """Dibuja el perfil, las fuerzas individuales y la resultante"""
     fig, ax = plt.subplots(figsize=(12, 10))
     poly = geom.poly.copy()
@@ -355,7 +357,7 @@ def plot_profile_with_forces(geom: Geometry, actions: dict, R_vec, e_m, title):
         base_unit = base_vec / geom.B_len
         
         mid_point = 0.5 * base_vec
-        offset = e_m * base_unit if np.isfinite(e_m) else np.array([0.0, 0.0])
+        offset = e_m1 * base_unit if np.isfinite(e_m1) else np.array([0.0, 0.0])
         app_point = mid_point + offset
         x_cross, y_cross = app_point[0], app_point[1]
         
@@ -1096,7 +1098,7 @@ def main():
                                 st.session_state.geometry,
                                 result['actions'],
                                 result['R'],
-                                result['base']['e_m'],
+                                result['base'].get('e_m1', result['base'].get('e_m')),
                                 f"{esc_id} - {nombre}"
                             )
                             st.pyplot(fig_perfil)
