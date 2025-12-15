@@ -24,7 +24,8 @@ theta_deg = st.sidebar.number_input("Contact inclination θ (°)", value=6.550, 
 
 st.sidebar.subheader("Uplift Options")
 apply_uplift = st.sidebar.checkbox("Include uplift pressure?", value=True)
-H_w = st.sidebar.number_input("Water height for upift Hw (m)", value=36.96, step=0.1, format="%.2f")
+H_w = st.sidebar.number_input("Water height for uplift Hw (m)", value=36.96, step=0.1, format="%.2f")
+H_down = st.sidebar.number_input("Downstream water height for uplift H_down (m)", value=0.00, step=0.1, format="%.2f")
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Material Parameters")
@@ -86,10 +87,13 @@ def rotate_to_normal_tangential(df, theta_deg):
 def integrate_trapezoid(x, y): 
     return float(np.trapz(y, x))
 
-def compute_uplift_stress(x_union, L_total, H_w):
+def compute_uplift_stress(x_union, L_total, H_w, H_down=0.0):
     gamma_w = 9810
     # p(x) is the hydrostatic pressure distribution (positive scalar)
-    p = gamma_w * H_w * (1 - x_union / L_total)
+    # Allow a non-zero downstream water level H_down so pressure at x=L_total
+    # is gamma_w * H_down instead of zero.
+    frac = x_union / L_total
+    p = gamma_w * (H_w * (1 - frac) + H_down * frac)
     # Represent uplift as a positive scalar pressure p in global axes
     # (Sxx = Syy = +p). After rotation this yields sigma_n = +p and tau = 0,
     # which increases sigma_n (towards tensile) and therefore reduces compression
@@ -101,7 +105,7 @@ def compute_uplift_stress(x_union, L_total, H_w):
         "Sxy": np.zeros_like(x_union)
     })
 
-def compute_uplift_with_opening(x_union, H_w, closed_mask):
+def compute_uplift_with_opening(x_union, H_w, H_down, closed_mask):
     """
     Compute uplift considering opening regions.
     For open regions (closed_mask=False), uplift equals the value at x=0.
@@ -115,14 +119,16 @@ def compute_uplift_with_opening(x_union, H_w, closed_mask):
     open_indices = np.where(~closed_mask)[0]
     
     if len(open_indices) == 0:
-        # No opening, use standard calculation
+        # No opening, use linear calculation between H_w (upstream) and H_down (downstream)
         L_total = x_union[-1] - x_union[0]
-        p = gamma_w * H_w * (1 - x_union / L_total)
+        frac = (x_union - x_union[0]) / L_total
+        p = gamma_w * (H_w * (1 - frac) + H_down * frac)
         syy_uplift = p
     else:
         # There is opening
         # Value at x=0
         uplift_at_x0 = gamma_w * H_w
+        uplift_at_end = gamma_w * H_down
         
         # Find the last open point (maximum x with opening)
         last_open_idx = open_indices[-1]
@@ -142,7 +148,9 @@ def compute_uplift_with_opening(x_union, H_w, closed_mask):
                     x_closed = x_union[i] - x_last_open
                     L_closed = x_union[-1] - x_last_open
                     if L_closed > 0:
-                        syy_uplift[i] = gamma_w * H_w * (1 - x_closed / L_closed)
+                        frac_closed = x_closed / L_closed
+                        # interpolate between uplift_at_x0 and uplift_at_end
+                        syy_uplift[i] = uplift_at_x0 * (1 - frac_closed) + uplift_at_end * frac_closed
                     else:
                         syy_uplift[i] = uplift_at_x0
     
@@ -188,7 +196,7 @@ if uploaded_file is not None:
                     with st.spinner(f"Computing iterative uplift (max {max_iterations} iterations)..."):
                         for iteration in range(max_iterations):
                             # Compute uplift with current opening state
-                            df_uplift = compute_uplift_with_opening(x_union, H_w, closed_mask)
+                            df_uplift = compute_uplift_with_opening(x_union, H_w, H_down, closed_mask)
                             df_uplift_rotated = rotate_to_normal_tangential(df_uplift, theta_deg)
                             
                             # Total stress = FEM + uplift
