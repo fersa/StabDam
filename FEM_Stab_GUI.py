@@ -24,13 +24,13 @@ theta_deg = st.sidebar.number_input("Contact inclination θ (°)", value=6.550, 
 
 st.sidebar.subheader("Uplift Options")
 apply_uplift = st.sidebar.checkbox("Include uplift pressure?", value=True)
-H_w = st.sidebar.number_input("Water height for uplift Hw (m)", value=36.96, step=0.1, format="%.2f")
+H_w = st.sidebar.number_input("Water height for uplift Hw (m)", value=9.85, step=0.1, format="%.2f")
 H_down = st.sidebar.number_input("Downstream water height for uplift H_down (m)", value=0.00, step=0.1, format="%.2f")
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Material Parameters")
 phi_deg = st.sidebar.number_input("Friction angle φ (°)", value=45.0, min_value=0.0, max_value=90.0, step=1.0)
-c_kgcm2 = st.sidebar.number_input("Cohesion c (kg/cm²)", value=0.5, min_value=0.0, step=0.1, format="%.3f")
+c_kgcm2 = st.sidebar.number_input("Cohesion c (kg/cm²)", value=5.0, min_value=0.0, step=1, format="%.3f")
 FS_required = st.sidebar.number_input("Required FS", value=1.4, min_value=0.1, step=0.1)
 
 st.sidebar.markdown("---")
@@ -40,8 +40,8 @@ phi_max = st.sidebar.number_input("φ max (°)", value=60, min_value=0, max_valu
 phi_step = st.sidebar.number_input("φ step (°)", value=5, min_value=1, max_value=10)
 
 c_min = st.sidebar.number_input("c min (kg/cm²)", value=0.0, min_value=0.0, step=0.1)
-c_max = st.sidebar.number_input("c max (kg/cm²)", value=3.0, min_value=0.0, step=0.1)
-c_points = st.sidebar.number_input("c points", value=13, min_value=2, max_value=50)
+c_max = st.sidebar.number_input("c max (kg/cm²)", value=20.0, min_value=0.0, step=0.1)
+c_points = st.sidebar.number_input("c points", value=12, min_value=2, max_value=50)
 
 # Analysis functions
 def parse_three_graph_blocks(content):
