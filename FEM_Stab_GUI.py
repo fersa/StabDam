@@ -20,7 +20,7 @@ uploaded_file = st.sidebar.file_uploader("Upload GiD stress file (.grf)", type=[
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Geometric Parameters")
-theta_deg = st.sidebar.number_input("Contact inclination θ (°)", value=6.550, step=0.1, format="%.3f")
+theta_deg = st.sidebar.number_input("Contact inclination θ (°)", value=0.0, step=0.1, format="%.3f")
 
 st.sidebar.subheader("Uplift Options")
 apply_uplift = st.sidebar.checkbox("Include uplift pressure?", value=True)
@@ -30,18 +30,18 @@ H_down = st.sidebar.number_input("Downstream water height for uplift H_down (m)"
 st.sidebar.markdown("---")
 st.sidebar.subheader("Material Parameters")
 phi_deg = st.sidebar.number_input("Friction angle φ (°)", value=45.0, min_value=0.0, max_value=90.0, step=1.0)
-c_kgcm2 = st.sidebar.number_input("Cohesion c (kg/cm²)", value=5.0, min_value=0.0, step=1, format="%.3f")
+c_kgcm2 = st.sidebar.number_input("Cohesion c (kg/cm²)", value=5.0, min_value=0.0, step=0.1, format="%.3f")
 FS_required = st.sidebar.number_input("Required FS", value=1.4, min_value=0.1, step=0.1)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Parametric Study Ranges")
 phi_min = st.sidebar.number_input("φ min (°)", value=0, min_value=0, max_value=90)
-phi_max = st.sidebar.number_input("φ max (°)", value=60, min_value=0, max_value=90)
+phi_max = st.sidebar.number_input("φ max (°)", value=90, min_value=0, max_value=90)
 phi_step = st.sidebar.number_input("φ step (°)", value=5, min_value=1, max_value=10)
 
 c_min = st.sidebar.number_input("c min (kg/cm²)", value=0.0, min_value=0.0, step=0.1)
-c_max = st.sidebar.number_input("c max (kg/cm²)", value=20.0, min_value=0.0, step=0.1)
-c_points = st.sidebar.number_input("c points", value=12, min_value=2, max_value=50)
+c_max = st.sidebar.number_input("c max (kg/cm²)", value=10.0, min_value=0.0, step=0.1)
+c_points = st.sidebar.number_input("c points", value=13, min_value=2, max_value=50)
 
 # Analysis functions
 def parse_three_graph_blocks(content):
@@ -171,6 +171,7 @@ if uploaded_file is not None:
         with st.spinner("Processing data..."):
             try:
                 # Convert cohesion to Pa
+                # 1 kg/cm² = 98066.5 Pa
                 c = c_kgcm2 * 98066.5
                 
                 # Parse file
@@ -235,6 +236,8 @@ if uploaded_file is not None:
                 Lc = integrate_trapezoid(x, closed.astype(float))
                 
                 tan_phi = math.tan(math.radians(phi_deg))
+                # R = c·Lc + N·tan(φ)
+                # c in Pa, Lc in m, N in N/m → R in N/m
                 R = c*Lc + N*tan_phi
                 FS = R / max(abs(T), 1e-12)
 
@@ -301,9 +304,9 @@ if uploaded_file is not None:
                             color='green' if FS >= FS_required else 'red', weight='bold')
                     
                     ax1.grid(True, alpha=0.3)
-                    ax1.set_xlabel('Position x (length units)', fontsize=11)
-                    ax1.set_ylabel('Stress (Pa)', fontsize=11)
-                    ax1.set_title(f'Normal and Shear Stresses Along Contact\n{uploaded_file.name}', fontsize=12)
+                    ax1.set_xlabel('Position x (length units)', fontsize=14)
+                    ax1.set_ylabel('Stress (Pa)', fontsize=14)
+                    ax1.set_title(f'Normal and Shear Stresses Along Contact\n{uploaded_file.name}', fontsize=15)
                     ax1.legend()
                     st.pyplot(fig1)
                 
@@ -311,6 +314,7 @@ if uploaded_file is not None:
                     # Parametric study
                     phi_deg_range = np.arange(phi_min, phi_max + phi_step, phi_step)
                     c_kgcm2_range = np.linspace(c_min, c_max, c_points)
+                    # Convert to Pa: 1 kg/cm² = 98066.5 Pa
                     c_range = c_kgcm2_range * 98066.5
                     
                     FS_matrix = np.zeros((len(phi_deg_range), len(c_range)))
@@ -339,16 +343,16 @@ if uploaded_file is not None:
                     if len(levels_std) > 0:
                         cs_std = ax2.contour(c_kgcm2_range, phi_deg_range, FS_matrix, 
                                              levels=levels_std, colors='white', linewidths=1.5)
-                        ax2.clabel(cs_std, inline=True, fmt='%.1f', fontsize=10)
+                        ax2.clabel(cs_std, inline=True, fmt='%.1f', fontsize=12)
 
                     # Plot required FS contour in yellow with greater line width
                     cs_req = ax2.contour(c_kgcm2_range, phi_deg_range, FS_matrix, 
                                          levels=levels_req, colors='yellow', linewidths=2.5)
-                    ax2.clabel(cs_req, inline=True, fmt='Required FS=%.1f', fontsize=10)
+                    ax2.clabel(cs_req, inline=True, fmt='Required FS=%.1f', fontsize=12)
                   
-                    ax2.set_xlabel('Cohesión (kg/cm²)', fontsize=11)
-                    ax2.set_ylabel('Ángulo de fricción (°)', fontsize=11)
-                    ax2.set_title(f'Factor de Seguridad al Deslizamiento\n(theta = {theta_deg}°)', fontsize=12)
+                    ax2.set_xlabel('Cohesión (kg/cm²)', fontsize=14)
+                    ax2.set_ylabel('Ángulo de fricción (°)', fontsize=14)
+                    ax2.set_title(f'Factor de Seguridad al Deslizamiento\n(theta = {theta_deg}°)', fontsize=15)
                     
                     ax2.plot(c_kgcm2, phi_deg, 'w*', markersize=15, label='Current case')
                     ax2.legend()
