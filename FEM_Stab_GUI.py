@@ -36,11 +36,11 @@ FS_required = st.sidebar.number_input("Required FS", value=1.4, min_value=0.1, s
 st.sidebar.markdown("---")
 st.sidebar.subheader("Parametric Study Ranges")
 phi_min = st.sidebar.number_input("φ min (°)", value=0, min_value=0, max_value=90)
-phi_max = st.sidebar.number_input("φ max (°)", value=90, min_value=0, max_value=90)
+phi_max = st.sidebar.number_input("φ max (°)", value=60, min_value=0, max_value=90)
 phi_step = st.sidebar.number_input("φ step (°)", value=5, min_value=1, max_value=10)
 
 c_min = st.sidebar.number_input("c min (kg/cm²)", value=0.0, min_value=0.0, step=0.1)
-c_max = st.sidebar.number_input("c max (kg/cm²)", value=10.0, min_value=0.0, step=0.1)
+c_max = st.sidebar.number_input("c max (kg/cm²)", value=5.0, min_value=0.0, step=0.1)
 c_points = st.sidebar.number_input("c points", value=13, min_value=2, max_value=50)
 
 # Analysis functions
@@ -242,12 +242,11 @@ if uploaded_file is not None:
                 FS = R / max(abs(T), 1e-12)
 
                 # --- Compute required friction angle for FS_required with c=0 ---
-                if abs(N) > 1e-12 and abs(T) > 1e-12:
+                # Formula: FS_required = N·tan(φ_req) / |T|
+                # Therefore: tan(φ_req) = FS_required·|T| / N
+                if N > 1e-12 and abs(T) > 1e-12:
                     tan_phi_req = (FS_required * abs(T)) / N
-                    if tan_phi_req < 1:
-                        phi_req = math.degrees(math.atan(tan_phi_req))
-                    else:
-                        phi_req = 89.9  # Unphysical, not achievable
+                    phi_req = math.degrees(math.atan(tan_phi_req))
                 else:
                     phi_req = float('nan')
                 
