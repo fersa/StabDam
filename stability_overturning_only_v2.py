@@ -5,6 +5,25 @@ import math
 import matplotlib.pyplot as plt
 from io import BytesIO
 
+"""
+Overturning stability Streamlit app
+
+This script reads two GiD-style stress files (.grf): one containing
+self-weight stresses and another with applied loads only. It rotates
+stresses into a contact-aligned coordinate system, computes compressive
+equivalent tractions, evaluates stabilizing moments from self-weight,
+overturning moments from loads (including optional uplift), and
+reports a factor of safety against overturning.
+
+Sign conventions:
+- In the rotated frame `sigma_n` is NEGATIVE for compression and
+    POSITIVE for tension/opening. The code converts compression to
+    positive traction when computing stabilizing forces/moments.
+
+This file adds clarifying comments to make the handling of traction
+vs tension and uplift clearer.
+"""
+
 st.set_page_config(page_title="Overturning Stability Analysis", layout="wide")
 
 st.title("🏗️ Overturning Stability Analysis Tool")
@@ -218,6 +237,9 @@ if run:
 
         # --- Uplift (optional, overturning demand only) ---
         if include_uplift:
+            # Map the user-friendly selectbox string to the function's crack_ref
+            # expected values ('toe' or 'upstream'). The selectbox options are
+            # intentionally verbose, so we check the string start for clarity.
             cref = "toe" if crack_ref.startswith("from toe") else "upstream"
             p_u = compute_uplift_pressure_from_crack(x_union, crack_length, Hw, crack_ref=cref)
             M_u = integrate_trapezoid(x_union, p_u * lever)
